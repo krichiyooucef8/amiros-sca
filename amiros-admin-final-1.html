@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>AMIROS Admin · لوحة الإدارة</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#070d0a;--s:#0d1510;--s2:#121e16;--s3:#18281c;--s4:#1e3222;
+  --b:#162018;--b2:#1e3022;--b3:#28402e;
+  --acc:#00c9a7;--acc2:#3d7fff;--warn:#f5a623;--danger:#e84040;--purple:#9b6dff;
+  --text:#d0e8d8;--t2:#6a9478;--t3:#344a3c;--t4:#1e2e24;
+  --font:'IBM Plex Sans Arabic',sans-serif;--mono:'JetBrains Mono',monospace;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+input,select,button,textarea{font-family:var(--font);font-size:14px;touch-action:manipulation}
+button{cursor:pointer}
+
+/* ── Top bar ── */
+#top{
+  height:52px;background:var(--s);border-bottom:1px solid var(--b2);
+  display:flex;align-items:center;gap:8px;padding:0 12px;flex-shrink:0;
+}
+.logo{font-size:14px;font-weight:700;color:var(--acc);font-family:var(--mono);letter-spacing:.06em;white-space:nowrap}
+.logo span{color:var(--t2);font-weight:400}
+.sp{flex:1}
+.tb{
+  height:36px;padding:0 12px;border-radius:6px;
+  border:1px solid var(--b2);background:var(--s2);color:var(--text);
+  font-size:12px;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;gap:4px;white-space:nowrap;
+}
+.tb:active{opacity:.75}
+.tb.primary{background:var(--acc);border-color:var(--acc);color:#000;font-weight:600}
+
+/* ── Body ── */
+#body{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Bottom tab bar ── */
+#tab-bar{
+  height:56px;background:var(--s);border-top:1px solid var(--b2);
+  display:flex;align-items:stretch;flex-shrink:0;
+  padding-bottom:var(--safe-bottom);
+}
+.tab-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  background:none;border:none;color:var(--t2);font-size:9px;border-top:2px solid transparent;
+  transition:all .15s;padding:6px 4px;
+}
+.tab-btn .ico{font-size:20px}
+.tab-btn.active{color:var(--acc);border-top-color:var(--acc)}
+.tab-btn:active{background:var(--s2)}
+
+/* ── Content ── */
+#content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+.page{display:none}.page.active{display:block}
+.page-title{font-size:17px;font-weight:600;margin-bottom:2px}
+.page-sub{font-size:11px;color:var(--t2);margin-bottom:14px}
+
+/* ── Tables → card list on mobile ── */
+.card-list{display:flex;flex-direction:column;gap:8px}
+.card{
+  background:var(--s2);border:1px solid var(--b2);border-radius:10px;
+  padding:12px 14px;display:flex;align-items:center;gap:10px;
+}
+.card-info{flex:1;min-width:0}
+.card-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-meta{font-size:10px;color:var(--t2);margin-top:2px;font-family:var(--mono)}
+.card-badge{
+  font-size:10px;font-family:var(--mono);color:var(--acc);
+  background:rgba(0,201,167,.08);border:1px solid rgba(0,201,167,.2);
+  padding:2px 8px;border-radius:4px;white-space:nowrap;
+}
+.card-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* ── Buttons ── */
+.btn{
+  padding:8px 12px;border-radius:6px;border:1px solid var(--b2);
+  background:var(--s2);color:var(--text);font-size:12px;cursor:pointer;
+}
+.btn:active{opacity:.75}
+.btn-del{border-color:rgba(232,64,64,.3);color:var(--danger)}
+
+/* ── FAB (Add button) ── */
+.fab{
+  position:fixed;bottom:calc(72px + var(--safe-bottom));left:16px;
+  width:50px;height:50px;border-radius:50%;
+  background:var(--acc);border:none;color:#000;font-size:24px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(0,201,167,.35);z-index:10;
+}
+.fab:active{transform:scale(.94)}
+
+/* ── Modal (full-screen sheet) ── */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:flex-end}
+.modal-ov.open{display:flex}
+.modal{
+  background:var(--s);border:1px solid var(--b2);
+  border-radius:16px 16px 0 0;
+  width:100%;max-height:92dvh;
+  display:flex;flex-direction:column;
+  padding-bottom:var(--safe-bottom);
+}
+.modal-handle{width:36px;height:4px;background:var(--b2);border-radius:2px;margin:10px auto 4px}
+.modal-hdr{padding:10px 16px 12px;border-bottom:1px solid var(--b);display:flex;align-items:center}
+.modal-hdr h2{font-size:14px;font-weight:500;flex:1}
+.mc{background:none;border:none;color:var(--t2);font-size:22px;cursor:pointer;padding:4px}
+.modal-body{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+.modal-foot{padding:12px 16px;border-top:1px solid var(--b);display:flex;gap:8px}
+.modal-foot .tb{flex:1;justify-content:center;height:44px;font-size:14px}
+
+/* ── Form fields ── */
+.form-row{margin-bottom:14px}
+.form-row label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px}
+.form-inp{
+  width:100%;background:var(--s2);border:1px solid var(--b2);
+  border-radius:8px;color:var(--text);
+  font-family:var(--mono);font-size:14px;
+  padding:11px 13px;-webkit-appearance:none;
+}
+.form-inp:focus{outline:none;border-color:var(--acc)}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* ── Pricing card ── */
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ── Toast ── */
+#toast{
+  position:fixed;bottom:calc(70px + var(--safe-bottom));left:50%;transform:translateX(-50%);
+  background:var(--s3);border:1px solid var(--b3);color:var(--text);
+  padding:10px 20px;border-radius:24px;font-size:12px;
+  opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap;
+}
+#toast.show{opacity:1}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="top">
+  <div class="logo">AMIROS<span>/admin</span></div>
+  <div class="sp"></div>
+  <button class="tb" onclick="exportDB()">⬇</button>
+  <button class="tb" onclick="document.getElementById('import-file').click()">⬆</button>
+  <input type="file" id="import-file" accept=".json" style="display:none" onchange="importDB(this)"/>
+  <button class="tb primary" onclick="window.open('amiros-designer-v4.html','_blank')">↗ Designer</button>
+</div>
+
+<div id="body">
+  <!-- Content -->
+  <div id="content">
+
+    <!-- UNITS -->
+    <div class="page active" id="page-units">
+      <div class="page-title">📦 الوحدات</div>
+      <div class="page-sub">وحدات الأثاث المتاحة في الديزاينر</div>
+      <div class="card-list" id="units-body"></div>
+    </div>
+
+    <!-- MATERIALS -->
+    <div class="page" id="page-materials">
+      <div class="page-title">🎨 المواد</div>
+      <div class="page-sub">الألواح والسطوح والخامات</div>
+      <div class="card-list" id="mats-body"></div>
+    </div>
+
+    <!-- PRICING -->
+    <div class="page" id="page-pricing">
+      <div class="page-title">💰 التسعير</div>
+      <div class="page-sub">تكاليف الإنتاج والهوامش</div>
+      <div id="pricing-form"></div>
+      <button class="tb primary" onclick="savePricing()" style="margin-top:16px;width:100%;height:46px;justify-content:center;font-size:14px">💾 حفظ الإعدادات</button>
+    </div>
+
+    <!-- FILES -->
+    <div class="page" id="page-files">
+      <div class="page-title">📁 الملفات</div>
+      <div class="page-sub">مشاريع مُرسَلة من الديزاينر</div>
+      <div class="card-list" id="files-list"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM TAB BAR -->
+  <div id="tab-bar">
+    <button class="tab-btn active" id="tabbt-units" onclick="setTab('units',this)">
+      <span class="ico">📦</span><span>الوحدات</span>
+    </button>
+    <button class="tab-btn" id="tabbt-materials" onclick="setTab('materials',this)">
+      <span class="ico">🎨</span><span>المواد</span>
+    </button>
+    <button class="tab-btn" id="tabbt-pricing" onclick="setTab('pricing',this)">
+      <span class="ico">💰</span><span>التسعير</span>
+    </button>
+    <button class="tab-btn" id="tabbt-files" onclick="setTab('files',this)">
+      <span class="ico">📁</span><span>الملفات</span>
+    </button>
+  </div>
+</div>
+
+<!-- FAB (only for units & materials) -->
+<button class="fab" id="fab-btn" onclick="handleFab()">+</button>
+
+<!-- UNIT MODAL -->
+<div class="modal-ov" id="unit-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-hdr"><h2 id="unit-title">إضافة وحدة</h2><button class="mc" onclick="closeModal('unit-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>الاسم</label><input class="form-inp" id="u-name" placeholder="مثال: خزانة أرضية"/></div>
+      <div class="form-row"><label>النوع</label>
+        <select class="form-inp" id="u-type">
+          <option value="base">base</option><option value="wall">wall</option><option value="tall">tall</option>
+          <option value="evier">evier</option><option value="drawer">drawer</option><option value="shelf">shelf</option>
+          <option value="washing">washing</option><option value="vanity">vanity</option><option value="bed">bed</option>
+        </select>
+      </div>
+      <div class="form-row-3">
+        <div class="form-row" style="margin-bottom:0"><label>عرض mm</label><input class="form-inp" type="number" id="u-w"/></div>
+        <div class="form-row" style="margin-bottom:0"><label>ارتفاع mm</label><input class="form-inp" type="number" id="u-h"/></div>
+        <div class="form-row" style="margin-bottom:0"><label>عمق mm</label><input class="form-inp" type="number" id="u-d"/></div>
+      </div>
+      <div class="form-row" style="margin-top:14px"><label>تكلفة التجميع (دج)</label><input class="form-inp" type="number" id="u-asm"/></div>
+      <div class="form-row"><label>الغرف (مثال: kitchen,bathroom)</label><input class="form-inp" id="u-rooms" placeholder="kitchen,bathroom"/></div>
+    </div>
+    <div class="modal-foot">
+      <button class="tb" onclick="closeModal('unit-modal')">إلغاء</button>
+      <button class="tb primary" onclick="saveUnit()">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- MATERIAL MODAL -->
+<div class="modal-ov" id="mat-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-hdr"><h2 id="mat-title">إضافة مادة</h2><button class="mc" onclick="closeModal('mat-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row"><label>الاسم</label><input class="form-inp" id="m-name" placeholder="مثال: MDF أبيض"/></div>
+      <div class="form-row-2">
+        <div class="form-row" style="margin-bottom:0"><label>اللون</label><input class="form-inp" type="color" id="m-color" style="height:46px;padding:4px 8px;cursor:pointer"/></div>
+        <div class="form-row" style="margin-bottom:0"><label>الفئة</label>
+          <select class="form-inp" id="m-cat">
+            <option value="panel">ألواح</option><option value="countertop">سطوح</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-3" style="margin-top:14px">
+        <div class="form-row" style="margin-bottom:0"><label>السماكة mm</label><input class="form-inp" type="number" id="m-thick"/></div>
+        <div class="form-row" style="margin-bottom:0"><label>السعر/م²</label><input class="form-inp" type="number" id="m-price"/></div>
+        <div class="form-row" style="margin-bottom:0"><label>معامل الهدر</label><input class="form-inp" type="number" id="m-waste" step="0.01"/></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="tb" onclick="closeModal('mat-modal')">إلغاء</button>
+      <button class="tb primary" onclick="saveMaterial()">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const DB_KEY='amiros_db';
+const DEFAULT_DB={
+  version:4,
+  materials:[
+    {id:'m1',name:'MDF أبيض 18mm',thickness:18,color:'#f0ead8',pricePerM2:1200,wasteFactor:1.15,category:'panel'},
+    {id:'m2',name:'بلوط طبيعي 18mm',thickness:18,color:'#c4913e',pricePerM2:3200,wasteFactor:1.20,category:'panel'},
+    {id:'m3',name:'غرانيت',thickness:20,color:'#5c5c68',pricePerM2:6000,wasteFactor:1.20,category:'countertop'},
+  ],
+  units:[
+    {id:'u1',name:'خزانة أرضية',type:'base',w:600,h:850,d:580,asmCost:1050,rooms:'kitchen'},
+    {id:'u2',name:'خزانة علوية',type:'wall',w:600,h:720,d:320,asmCost:850,rooms:'kitchen'},
+    {id:'u3',name:'وحدة حوض Évier',type:'evier',w:600,h:850,d:580,asmCost:1200,rooms:'kitchen'},
+    {id:'u4',name:'وحدة أدراج',type:'drawer',w:600,h:850,d:580,asmCost:1400,rooms:'kitchen,bedroom'},
+    {id:'u5',name:'غسالة ملابس',type:'washing',w:600,h:900,d:600,asmCost:0,rooms:'kitchen,bathroom'},
+    {id:'u6',name:'رف حمام',type:'shelf',w:400,h:200,d:200,asmCost:200,rooms:'bathroom'},
+    {id:'u7',name:'وحدة حمام',type:'vanity',w:600,h:600,d:480,asmCost:900,rooms:'bathroom'},
+    {id:'u8',name:'سرير مزدوج',type:'bed',w:1600,h:500,d:2000,asmCost:2500,rooms:'bedroom'},
+  ],
+  pricing:{cutPerPanel:150,deliveryFlat:5000,marginPct:15,taxPct:19},
+  receivedFiles:[],
+};
+
+let DB=JSON.parse(localStorage.getItem(DB_KEY)||JSON.stringify(DEFAULT_DB));
+let editId=null;
+let currentTab='units';
+
+function save(){localStorage.setItem(DB_KEY,JSON.stringify(DB));showToast('✓ تم الحفظ');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+function setTab(tab,el){
+  currentTab=tab;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  el.classList.add('active');
+  // Show/hide FAB
+  const fab=document.getElementById('fab-btn');
+  fab.style.display=(tab==='units'||tab==='materials')?'flex':'none';
+  if(tab==='units')renderUnits();
+  else if(tab==='materials')renderMaterials();
+  else if(tab==='pricing')renderPricing();
+  else if(tab==='files')renderFiles();
+}
+
+function handleFab(){
+  if(currentTab==='units')openUnitModal();
+  else if(currentTab==='materials')openMatModal();
+}
+
+function renderUnits(){
+  document.getElementById('units-body').innerHTML=DB.units.map(u=>`
+    <div class="card">
+      <div class="card-info">
+        <div class="card-name">${u.name}</div>
+        <div class="card-meta">${u.type} · ${u.w}×${u.h}×${u.d}mm</div>
+        <div class="card-meta" style="margin-top:2px;color:var(--t3)">${u.rooms}</div>
+      </div>
+      <div class="card-badge">${u.asmCost} دج</div>
+      <div class="card-actions">
+        <button class="btn" onclick="editUnit('${u.id}')">✏</button>
+        <button class="btn btn-del" onclick="delUnit('${u.id}')">🗑</button>
+      </div>
+    </div>`).join('')||'<div style="color:var(--t3);text-align:center;padding:24px">لا توجد وحدات</div>';
+}
+
+function renderMaterials(){
+  document.getElementById('mats-body').innerHTML=DB.materials.map(m=>`
+    <div class="card">
+      <div style="width:36px;height:36px;border-radius:8px;background:${m.color};flex-shrink:0;border:1px solid var(--b2)"></div>
+      <div class="card-info">
+        <div class="card-name">${m.name}</div>
+        <div class="card-meta">${m.thickness}mm · ${m.category}</div>
+      </div>
+      <div class="card-badge">${m.pricePerM2} دج/م²</div>
+      <div class="card-actions">
+        <button class="btn" onclick="editMat('${m.id}')">✏</button>
+        <button class="btn btn-del" onclick="delMat('${m.id}')">🗑</button>
+      </div>
+    </div>`).join('')||'<div style="color:var(--t3);text-align:center;padding:24px">لا توجد مواد</div>';
+}
+
+function renderPricing(){
+  const p=DB.pricing;
+  document.getElementById('pricing-form').innerHTML=`
+    <div class="pricing-grid">
+      <div class="form-row"><label>تكلفة القطع/لوح</label><input class="form-inp" type="number" id="pf-cut" value="${p.cutPerPanel}"/></div>
+      <div class="form-row"><label>التوصيل (ثابت)</label><input class="form-inp" type="number" id="pf-del" value="${p.deliveryFlat}"/></div>
+      <div class="form-row"><label>هامش الربح (%)</label><input class="form-inp" type="number" id="pf-margin" value="${p.marginPct}"/></div>
+      <div class="form-row"><label>ضريبة TVA (%)</label><input class="form-inp" type="number" id="pf-tax" value="${p.taxPct}"/></div>
+    </div>`;
+}
+
+function savePricing(){
+  DB.pricing={
+    cutPerPanel:+document.getElementById('pf-cut').value,
+    deliveryFlat:+document.getElementById('pf-del').value,
+    marginPct:+document.getElementById('pf-margin').value,
+    taxPct:+document.getElementById('pf-tax').value,
+  };
+  save();
+}
+
+function renderFiles(){
+  document.getElementById('files-list').innerHTML=(DB.receivedFiles||[]).map((f,i)=>`
+    <div class="card">
+      <div style="font-size:24px">📄</div>
+      <div class="card-info">
+        <div class="card-name">${f.name||'مشروع بدون اسم'}</div>
+        <div class="card-meta">${f.cabinets?.length||0} وحدات · ${new Date(f.receivedAt).toLocaleString('ar-DZ')}</div>
+      </div>
+      <button class="btn btn-del" onclick="delFile(${i})">🗑</button>
+    </div>`).join('')||'<div style="color:var(--t3);text-align:center;padding:24px">لا توجد ملفات</div>';
+}
+
+function openUnitModal(){
+  editId=null;
+  document.getElementById('unit-title').textContent='إضافة وحدة';
+  document.getElementById('u-name').value='';
+  document.getElementById('u-type').value='base';
+  document.getElementById('u-w').value=600;
+  document.getElementById('u-h').value=850;
+  document.getElementById('u-d').value=580;
+  document.getElementById('u-asm').value=1050;
+  document.getElementById('u-rooms').value='';
+  document.getElementById('unit-modal').classList.add('open');
+}
+
+function editUnit(id){
+  const u=DB.units.find(x=>x.id===id);if(!u)return;
+  editId=id;
+  document.getElementById('unit-title').textContent='تعديل وحدة';
+  document.getElementById('u-name').value=u.name;
+  document.getElementById('u-type').value=u.type;
+  document.getElementById('u-w').value=u.w;
+  document.getElementById('u-h').value=u.h;
+  document.getElementById('u-d').value=u.d;
+  document.getElementById('u-asm').value=u.asmCost;
+  document.getElementById('u-rooms').value=u.rooms;
+  document.getElementById('unit-modal').classList.add('open');
+}
+
+function saveUnit(){
+  const name=document.getElementById('u-name').value.trim();
+  if(!name)return showToast('⚠ أدخل اسم');
+  const u={
+    id:editId||'u'+Date.now(),name,
+    type:document.getElementById('u-type').value,
+    w:+document.getElementById('u-w').value,
+    h:+document.getElementById('u-h').value,
+    d:+document.getElementById('u-d').value,
+    asmCost:+document.getElementById('u-asm').value,
+    rooms:document.getElementById('u-rooms').value,
+  };
+  if(editId){const i=DB.units.findIndex(x=>x.id===editId);if(i>-1)DB.units[i]=u;}
+  else DB.units.push(u);
+  save();closeModal('unit-modal');renderUnits();
+}
+
+function delUnit(id){if(confirm('حذف هذه الوحدة؟')){DB.units=DB.units.filter(u=>u.id!==id);save();renderUnits();}}
+
+function openMatModal(){
+  editId=null;
+  document.getElementById('mat-title').textContent='إضافة مادة';
+  document.getElementById('m-name').value='';
+  document.getElementById('m-color').value='#f0ead8';
+  document.getElementById('m-thick').value=18;
+  document.getElementById('m-price').value=1200;
+  document.getElementById('m-waste').value=1.15;
+  document.getElementById('m-cat').value='panel';
+  document.getElementById('mat-modal').classList.add('open');
+}
+
+function editMat(id){
+  const m=DB.materials.find(x=>x.id===id);if(!m)return;
+  editId=id;
+  document.getElementById('mat-title').textContent='تعديل مادة';
+  document.getElementById('m-name').value=m.name;
+  document.getElementById('m-color').value=m.color;
+  document.getElementById('m-thick').value=m.thickness;
+  document.getElementById('m-price').value=m.pricePerM2;
+  document.getElementById('m-waste').value=m.wasteFactor;
+  document.getElementById('m-cat').value=m.category;
+  document.getElementById('mat-modal').classList.add('open');
+}
+
+function saveMaterial(){
+  const name=document.getElementById('m-name').value.trim();
+  if(!name)return showToast('⚠ أدخل اسم');
+  const m={
+    id:editId||'m'+Date.now(),name,
+    color:document.getElementById('m-color').value,
+    thickness:+document.getElementById('m-thick').value,
+    pricePerM2:+document.getElementById('m-price').value,
+    wasteFactor:+document.getElementById('m-waste').value,
+    category:document.getElementById('m-cat').value,
+  };
+  if(editId){const i=DB.materials.findIndex(x=>x.id===editId);if(i>-1)DB.materials[i]=m;}
+  else DB.materials.push(m);
+  save();closeModal('mat-modal');renderMaterials();
+}
+
+function delMat(id){if(confirm('حذف هذه المادة؟')){DB.materials=DB.materials.filter(m=>m.id!==id);save();renderMaterials();}}
+function delFile(i){DB.receivedFiles.splice(i,1);save();renderFiles();}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function exportDB(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(DB,null,2)],{type:'application/json'}));
+  a.download='amiros-db-'+Date.now()+'.json';a.click();showToast('⬇ تم التصدير');
+}
+function importDB(inp){
+  if(!inp.files[0])return;
+  const r=new FileReader();
+  r.onload=e=>{try{DB=JSON.parse(e.target.result);save();location.reload();}catch{showToast('⚠ خطأ في الملف');}};
+  r.readAsText(inp.files[0]);inp.value='';
+}
+
+// Init
+renderUnits();
+</script>
+</body>
+</html>

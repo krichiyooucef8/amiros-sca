@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>AMIROS Designer · صمّم مشروعك</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#06080b;--s:#0d1117;--s2:#161b24;--s3:#1c2333;
+  --b:#181f2e;--b2:#243040;
+  --acc:#3d7fff;--acc2:#00c9a7;--warn:#f5a623;
+  --text:#dde2ed;--t2:#7a8599;--t3:#3d4d63;
+  --font:'IBM Plex Sans Arabic',sans-serif;--mono:'JetBrains Mono',monospace;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ── Reset & base ── */
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+input,select,button{font-family:var(--font);font-size:14px;touch-action:manipulation}
+button{cursor:pointer}
+
+/* ── Top bar ── */
+#top{
+  height:52px;
+  background:var(--s);
+  border-bottom:1px solid var(--b2);
+  display:flex;align-items:center;gap:8px;
+  padding:0 12px;
+  flex-shrink:0;
+}
+.logo{font-size:13px;font-weight:700;color:var(--acc);font-family:var(--mono);white-space:nowrap}
+.sp{flex:1}
+.tb{
+  height:36px;padding:0 14px;
+  border-radius:6px;border:1px solid var(--b2);
+  background:var(--s2);color:var(--text);
+  font-size:12px;cursor:pointer;
+  transition:all .15s;display:flex;align-items:center;gap:4px;
+  white-space:nowrap;
+}
+.tb:active{opacity:.75}
+.tb.primary{background:var(--acc);border-color:var(--acc);color:#000;font-weight:600}
+
+/* ── Main layout ── */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+
+/* ── 3D Canvas (full area) ── */
+#canvas{flex:1;position:relative;background:var(--bg);overflow:hidden;touch-action:none}
+canvas{width:100%;height:100%;display:block}
+
+/* ── Bottom toolbar ── */
+#bottom-bar{
+  height:56px;
+  background:var(--s);
+  border-top:1px solid var(--b2);
+  display:flex;align-items:center;justify-content:space-around;
+  padding:0 8px;
+  padding-bottom:var(--safe-bottom);
+  flex-shrink:0;
+}
+.bbar-btn{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:none;border:none;color:var(--t2);
+  font-size:9px;padding:6px 10px;border-radius:8px;
+  transition:all .15s;min-width:52px;
+}
+.bbar-btn .ico{font-size:20px}
+.bbar-btn.active,.bbar-btn:active{color:var(--acc);background:rgba(61,127,255,.08)}
+
+/* ── Price chip fixed on canvas ── */
+#price-chip{
+  position:absolute;top:10px;left:10px;z-index:5;
+  background:rgba(13,17,23,.85);backdrop-filter:blur(6px);
+  border:1px solid var(--b2);border-radius:8px;
+  padding:6px 12px;font-size:11px;color:var(--t2);
+  pointer-events:none;
+}
+#price-chip strong{color:var(--warn);font-family:var(--mono);font-size:13px}
+
+/* ── Drawer (slides up from bottom) ── */
+.drawer-ov{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.6);z-index:50;
+}
+.drawer-ov.open{display:block}
+.drawer{
+  position:fixed;bottom:0;right:0;left:0;
+  background:var(--s);
+  border-radius:16px 16px 0 0;
+  border-top:1px solid var(--b2);
+  max-height:78dvh;
+  display:flex;flex-direction:column;
+  z-index:51;
+  transform:translateY(100%);
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+  padding-bottom:var(--safe-bottom);
+}
+.drawer-ov.open .drawer{transform:translateY(0)}
+.drawer-handle{width:36px;height:4px;background:var(--b2);border-radius:2px;margin:10px auto 6px}
+.drawer-title{padding:0 16px 10px;font-size:13px;font-weight:600;color:var(--text);border-bottom:1px solid var(--b)}
+.drawer-body{flex:1;overflow-y:auto;padding:12px 16px;-webkit-overflow-scrolling:touch}
+
+/* ── Units list in drawer ── */
+.unit-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 0}
+.ub{
+  padding:10px;border-radius:8px;border:1px solid var(--b2);
+  background:var(--s2);color:var(--text);
+  display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+  text-align:right;transition:all .15s;
+}
+.ub:active{border-color:var(--acc);background:rgba(61,127,255,.08)}
+.ui{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(61,127,255,.1);color:var(--acc)}
+.ub strong{font-size:12px;display:block}
+.ub small{font-size:10px;color:var(--t2)}
+
+/* ── Inspector in drawer ── */
+.if{margin-bottom:14px}
+.if label{font-size:10px;color:var(--t3);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:4px}
+.if input,.if select{
+  width:100%;background:var(--s2);border:1px solid var(--b2);
+  border-radius:6px;color:var(--text);
+  font-family:var(--mono);font-size:14px;
+  padding:9px 12px;
+  -webkit-appearance:none;
+}
+.if input:focus,.if select:focus{outline:none;border-color:var(--acc)}
+.del-btn{
+  width:100%;padding:11px;
+  border:1px solid rgba(232,64,64,.35);
+  background:rgba(232,64,64,.08);
+  color:#e84040;border-radius:8px;
+  font-size:13px;margin-top:6px;
+}
+
+/* ── Room settings in drawer ── */
+.room-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ── Quote modal ── */
+#quote-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;align-items:flex-end;justify-content:center}
+#quote-modal.open{display:flex}
+#quote-box{
+  background:var(--s);border:1px solid var(--b2);
+  border-radius:16px 16px 0 0;
+  width:100%;max-height:90dvh;
+  display:flex;flex-direction:column;
+  padding-bottom:var(--safe-bottom);
+}
+.qhdr{padding:14px 16px;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center}
+.qbody{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+.qfoot{padding:12px 16px;border-top:1px solid var(--b);display:flex;gap:8px}
+.qfoot .tb{flex:1;justify-content:center}
+.tbl{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px}
+.tbl th{color:var(--t3);font-weight:500;padding:6px 8px;text-align:right;border-bottom:1px solid var(--b)}
+.tbl td{padding:6px 8px;border-bottom:1px solid var(--b)}
+.tbl tr:hover td{background:var(--s2)}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="top">
+  <div class="logo">AMIROS</div>
+  <div class="sp"></div>
+  <button class="tb" onclick="exportProject()">💾</button>
+  <button class="tb primary" onclick="generateQuote()">📊 أسعار</button>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- 3D Canvas -->
+  <div id="canvas">
+    <canvas id="canvas3d"></canvas>
+    <!-- Price chip -->
+    <div id="price-chip">الإجمالي: <strong id="total-price">0 دج</strong></div>
+  </div>
+
+  <!-- Bottom navigation bar -->
+  <div id="bottom-bar">
+    <button class="bbar-btn" id="btn-units" onclick="openDrawer('units')">
+      <span class="ico">📦</span><span>وحدات</span>
+    </button>
+    <button class="bbar-btn" id="btn-insp" onclick="openDrawer('insp')">
+      <span class="ico">⚙️</span><span>خصائص</span>
+    </button>
+    <button class="bbar-btn" id="btn-room" onclick="openDrawer('room')">
+      <span class="ico">🏠</span><span>الغرفة</span>
+    </button>
+  </div>
+</div>
+
+<!-- UNITS DRAWER -->
+<div class="drawer-ov" id="ov-units" onclick="closeDrawer('units')">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title">📦 أضف وحدة</div>
+    <div class="drawer-body">
+      <div class="unit-grid" id="units-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- INSPECTOR DRAWER -->
+<div class="drawer-ov" id="ov-insp" onclick="closeDrawer('insp')">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title">⚙️ خصائص الوحدة</div>
+    <div class="drawer-body" id="insp-body">
+      <div style="color:var(--t3);font-size:12px;text-align:center;padding:20px">اختر وحدة من المشهد أو أضف من تبويب الوحدات</div>
+    </div>
+  </div>
+</div>
+
+<!-- ROOM DRAWER -->
+<div class="drawer-ov" id="ov-room" onclick="closeDrawer('room')">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title">🏠 أبعاد الغرفة</div>
+    <div class="drawer-body">
+      <div class="room-row">
+        <div class="if"><label>عرض (م)</label><input type="number" id="room-w" value="4" step="0.5" onchange="updateRoom()"/></div>
+        <div class="if"><label>عمق (م)</label><input type="number" id="room-d" value="3" step="0.5" onchange="updateRoom()"/></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QUOTE MODAL -->
+<div id="quote-modal">
+  <div id="quote-box">
+    <div class="qhdr">
+      <h2 style="font-size:15px;font-weight:600">📊 عرض الأسعار</h2>
+      <button style="background:none;border:none;color:var(--t2);font-size:22px;cursor:pointer;padding:4px" onclick="closeQuote()">✕</button>
+    </div>
+    <div class="qbody">
+      <div id="quote-content"></div>
+    </div>
+    <div class="qfoot">
+      <button class="tb primary" onclick="printQuote()">🖨 طباعة</button>
+      <button class="tb" onclick="closeQuote()">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const DB_KEY='amiros_db';
+const DEFAULT_DB={version:4,units:[],materials:[],pricing:{}};
+const DB=JSON.parse(localStorage.getItem(DB_KEY)||JSON.stringify(DEFAULT_DB));
+
+const state={room:{w:4000,d:3000},cabinets:[],selectedId:null};
+let cabCtr=0;
+
+// ── Three.js setup ──────────────────────────────────────────────
+const cv=document.getElementById('canvas3d');
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x06080b);
+
+const camera=new THREE.PerspectiveCamera(45,1,0.01,50);
+camera.position.set(3,3,5);
+camera.lookAt(2,1,1.5);
+
+const ambient=new THREE.AmbientLight(0xffffff,0.4);scene.add(ambient);
+const sun=new THREE.DirectionalLight(0xfff4d6,1.2);sun.position.set(5,8,5);sun.castShadow=true;scene.add(sun);
+
+const grid=new THREE.GridHelper(10,40,0x1e2430,0x1e2430);scene.add(grid);
+const roomGrp=new THREE.Group();scene.add(roomGrp);
+
+function buildRoom(){
+  roomGrp.clear();
+  const W=state.room.w/1e3,D=state.room.d/1e3,H=2.8;
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(W,D),new THREE.MeshStandardMaterial({color:0x1a1f2e,roughness:.9}));
+  floor.rotation.x=-Math.PI/2;floor.position.set(W/2,0,D/2);floor.receiveShadow=true;roomGrp.add(floor);
+  const box=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),new THREE.MeshStandardMaterial({color:0x131b28,side:THREE.BackSide,roughness:.92}));
+  box.position.set(W/2,H/2,D/2);roomGrp.add(box);
+  grid.position.x=W/2;grid.position.z=D/2;
+  camera.lookAt(W/2,H/3,D/2);
+}
+
+const cabGrp=new THREE.Group();scene.add(cabGrp);
+const meshMap=new Map();
+
+function buildCabMesh(cab){
+  const ex=meshMap.get(cab.id);if(ex)cabGrp.remove(ex);
+  const W=cab.w/1e3,H=cab.h/1e3,D=cab.d/1e3;
+  const mat=DB.materials.find(m=>m.id===cab.matId)||DB.materials[0];
+  const col=parseInt((mat?.color||'#f0ead8').replace('#',''),16);
+  const grp=new THREE.Group();
+  grp.position.set(cab.x/1e3,0,cab.z/1e3);
+  grp.userData.cabId=cab.id;
+  const bM=new THREE.MeshStandardMaterial({color:col,roughness:.45,metalness:.05});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),bM);
+  body.position.y=H/2;body.castShadow=true;body.receiveShadow=true;body.userData.cabId=cab.id;grp.add(body);
+  if(state.selectedId===cab.id){
+    const ol=new THREE.Mesh(new THREE.BoxGeometry(W+.01,H+.01,D+.01),new THREE.MeshBasicMaterial({color:0x3d7fff,side:THREE.BackSide,transparent:true,opacity:.6}));
+    ol.position.y=H/2;grp.add(ol);
+  }
+  cabGrp.add(grp);meshMap.set(cab.id,grp);
+}
+
+function rebuildAll(){buildRoom();meshMap.forEach(m=>cabGrp.remove(m));meshMap.clear();state.cabinets.forEach(buildCabMesh);updatePrice();}
+
+// ── Camera control – touch & mouse ─────────────────────────────
+const rc=new THREE.Raycaster(),m2=new THREE.Vector2();
+let isDrag=false,prevM={x:0,y:0};
+let sph={theta:Math.PI*.3,phi:Math.PI*.3,r:6.5};
+let target=new THREE.Vector3(2,1,1.5);
+let touchStartTime=0,touchStartPos={x:0,y:0};
+
+function updateCam(){
+  const x=target.x+sph.r*Math.sin(sph.phi)*Math.sin(sph.theta);
+  const y=target.y+sph.r*Math.cos(sph.phi);
+  const z=target.z+sph.r*Math.sin(sph.phi)*Math.cos(sph.theta);
+  camera.position.set(x,y,z);camera.lookAt(target);
+}
+updateCam();
+
+// Mouse controls
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('wheel',e=>{sph.r=Math.max(1,Math.min(12,sph.r+e.deltaY*.006));updateCam();});
+cv.addEventListener('mousedown',e=>{if(e.button===2)isDrag=true;prevM={x:e.clientX,y:e.clientY};});
+window.addEventListener('mouseup',()=>isDrag=false);
+window.addEventListener('mousemove',e=>{
+  if(!isDrag)return;
+  const dx=e.clientX-prevM.x,dy=e.clientY-prevM.y;
+  sph.theta-=dx*.005;sph.phi=Math.max(.1,Math.min(Math.PI*.48,sph.phi-dy*.005));
+  updateCam();prevM={x:e.clientX,y:e.clientY};
+});
+cv.addEventListener('click',e=>{
+  const r=cv.getBoundingClientRect();
+  m2.x=((e.clientX-r.left)/r.width)*2-1;
+  m2.y=-((e.clientY-r.top)/r.height)*2+1;
+  rc.setFromCamera(m2,camera);
+  const hits=rc.intersectObjects(cabGrp.children,true);
+  if(hits.length>0){const id=hits[0].object.userData.cabId;if(id)selectCab(id);}
+  else selectCab(null);
+});
+
+// Touch controls
+let touches={};
+let lastPinchDist=0;
+cv.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  if(e.touches.length===1){
+    touchStartTime=Date.now();
+    touchStartPos={x:e.touches[0].clientX,y:e.touches[0].clientY};
+    prevM={x:e.touches[0].clientX,y:e.touches[0].clientY};
+    isDrag=true;
+  }else if(e.touches.length===2){
+    isDrag=false;
+    const dx=e.touches[0].clientX-e.touches[1].clientX;
+    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    lastPinchDist=Math.sqrt(dx*dx+dy*dy);
+  }
+},{passive:false});
+
+cv.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(e.touches.length===1&&isDrag){
+    const dx=e.touches[0].clientX-prevM.x;
+    const dy=e.touches[0].clientY-prevM.y;
+    sph.theta-=dx*.006;
+    sph.phi=Math.max(.1,Math.min(Math.PI*.48,sph.phi-dy*.006));
+    updateCam();
+    prevM={x:e.touches[0].clientX,y:e.touches[0].clientY};
+  }else if(e.touches.length===2){
+    const dx=e.touches[0].clientX-e.touches[1].clientX;
+    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    sph.r=Math.max(1,Math.min(12,sph.r-(dist-lastPinchDist)*.015));
+    lastPinchDist=dist;updateCam();
+  }
+},{passive:false});
+
+cv.addEventListener('touchend',e=>{
+  e.preventDefault();
+  isDrag=false;
+  // Short tap → pick object
+  if(e.changedTouches.length===1&&Date.now()-touchStartTime<220){
+    const t=e.changedTouches[0];
+    const moved=Math.abs(t.clientX-touchStartPos.x)+Math.abs(t.clientY-touchStartPos.y);
+    if(moved<10){
+      const r=cv.getBoundingClientRect();
+      m2.x=((t.clientX-r.left)/r.width)*2-1;
+      m2.y=-((t.clientY-r.top)/r.height)*2+1;
+      rc.setFromCamera(m2,camera);
+      const hits=rc.intersectObjects(cabGrp.children,true);
+      if(hits.length>0){
+        const id=hits[0].object.userData.cabId;
+        if(id){selectCab(id);openDrawer('insp');}
+      }else selectCab(null);
+    }
+  }
+},{passive:false});
+
+window.addEventListener('keydown',e=>{
+  if(e.key==='Delete'&&state.selectedId){
+    state.cabinets=state.cabinets.filter(c=>c.id!==state.selectedId);
+    selectCab(null);rebuildAll();
+  }
+});
+
+// ── Render loop ─────────────────────────────────────────────────
+function animate(){
+  requestAnimationFrame(animate);
+  const W=cv.clientWidth,H=cv.clientHeight;
+  renderer.setSize(W,H);
+  camera.aspect=W/H;camera.updateProjectionMatrix();
+  renderer.render(scene,camera);
+}
+animate();
+
+// ── Drawer helpers ──────────────────────────────────────────────
+function openDrawer(which){
+  closeAllDrawers();
+  document.getElementById('ov-'+which).classList.add('open');
+  document.getElementById('btn-'+which)?.classList.add('active');
+}
+function closeDrawer(which){
+  document.getElementById('ov-'+which).classList.remove('open');
+  document.getElementById('btn-'+which)?.classList.remove('active');
+}
+function closeAllDrawers(){
+  ['units','insp','room'].forEach(d=>{
+    document.getElementById('ov-'+d).classList.remove('open');
+    document.getElementById('btn-'+d)?.classList.remove('active');
+  });
+}
+
+// ── UI ──────────────────────────────────────────────────────────
+function renderUnitsList(){
+  const html=DB.units?.map(u=>`
+    <button class="ub" onclick="addCab('${u.id}');closeDrawer('units')">
+      <span class="ui">+</span>
+      <strong>${u.name}</strong>
+      <small>${u.w}×${u.h}mm</small>
+    </button>`).join('')||'<div style="color:var(--t3);font-size:11px;grid-column:1/-1">لا توجد وحدات متاحة</div>';
+  document.getElementById('units-list').innerHTML=html;
+}
+
+function addCab(uId){
+  const u=DB.units.find(x=>x.id===uId);if(!u)return;
+  cabCtr++;
+  const cab={id:'cab'+Date.now()+'_'+cabCtr,uId,name:u.name,w:u.w,h:u.h,d:u.d,x:300+(cabCtr-1)*700,z:500,matId:DB.materials[0]?.id||''};
+  state.cabinets.push(cab);
+  buildCabMesh(cab);selectCab(cab.id);updatePrice();
+}
+
+function selectCab(id){
+  state.selectedId=id;
+  if(id){
+    const c=state.cabinets.find(x=>x.id===id);
+    if(c){
+      buildCabMesh(c);
+      document.getElementById('insp-body').innerHTML=`
+        <div class="if"><label>اسم</label><input type="text" value="${c.name}" readonly style="color:var(--t2)"/></div>
+        <div class="if"><label>عرض (mm)</label><input type="number" value="${c.w}" step="100" onchange="updCab('${id}','w',this.value)"/></div>
+        <div class="if"><label>ارتفاع (mm)</label><input type="number" value="${c.h}" step="50" onchange="updCab('${id}','h',this.value)"/></div>
+        <div class="if"><label>عمق (mm)</label><input type="number" value="${c.d}" step="50" onchange="updCab('${id}','d',this.value)"/></div>
+        <div class="if"><label>المادة</label>
+          <select onchange="updCab('${id}','matId',this.value)">
+            ${DB.materials.map(m=>`<option value="${m.id}" ${m.id===c.matId?'selected':''}>${m.name}</option>`).join('')}
+          </select>
+        </div>
+        <button class="del-btn" onclick="delCab('${id}');closeDrawer('insp')">🗑 حذف الوحدة</button>`;
+    }
+  }else{
+    document.getElementById('insp-body').innerHTML='<div style="color:var(--t3);font-size:12px;text-align:center;padding:20px">لم يتم اختيار أي وحدة</div>';
+  }
+}
+
+function updCab(id,k,v){
+  const c=state.cabinets.find(x=>x.id===id);if(!c)return;
+  if(k==='w'||k==='h'||k==='d')c[k]=+v;else c[k]=v;
+  buildCabMesh(c);selectCab(id);updatePrice();
+}
+function delCab(id){state.cabinets=state.cabinets.filter(c=>c.id!==id);selectCab(null);rebuildAll();}
+function updateRoom(){
+  state.room.w=parseFloat(document.getElementById('room-w').value)*1e3;
+  state.room.d=parseFloat(document.getElementById('room-d').value)*1e3;
+  buildRoom();
+}
+function updatePrice(){
+  let tot=0;
+  state.cabinets.forEach(c=>{
+    const u=DB.units.find(x=>x.id===c.uId);
+    const m=DB.materials.find(x=>x.id===c.matId);
+    if(u&&m){const area=(c.w/1e3)*(c.h/1e3)*1.15;tot+=(area*m.pricePerM2)+u.asmCost;}
+  });
+  const pricing=DB.pricing||{marginPct:15,taxPct:19};
+  tot=tot*(1+(pricing.marginPct||15)/100)*(1+(pricing.taxPct||19)/100);
+  document.getElementById('total-price').textContent=Math.round(tot).toLocaleString('ar-DZ')+' دج';
+}
+
+function exportProject(){
+  const proj={room:state.room,cabinets:state.cabinets,exportedAt:new Date().toISOString()};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(proj,null,2)],{type:'application/json'}));
+  a.download='amiros-project-'+Date.now()+'.json';a.click();
+}
+
+function generateQuote(){
+  let tot=0;const items=[];
+  state.cabinets.forEach(c=>{
+    const u=DB.units.find(x=>x.id===c.uId);
+    const m=DB.materials.find(x=>x.id===c.matId);
+    if(u&&m){
+      const area=(c.w/1e3)*(c.h/1e3)*1.15;
+      const subTotal=area*m.pricePerM2+u.asmCost;
+      items.push({name:c.name,mat:m.name,cost:subTotal});tot+=subTotal;
+    }
+  });
+  const pricing=DB.pricing||{marginPct:15,taxPct:19};
+  const margin=tot*(pricing.marginPct||15)/100;
+  const tax=(tot+margin)*(pricing.taxPct||19)/100;
+  const grandTotal=tot+margin+tax;
+  document.getElementById('quote-content').innerHTML=`
+    <h3 style="font-size:13px;margin-bottom:6px">عرض أسعار AMIROS</h3>
+    <div style="font-size:11px;color:var(--t2);margin-bottom:12px">التاريخ: ${new Date().toLocaleDateString('ar-DZ')}</div>
+    <table class="tbl">
+      <thead><tr><th>الوحدة</th><th>المادة</th><th>السعر</th></tr></thead>
+      <tbody>${items.map(i=>`<tr><td>${i.name}</td><td style="font-size:10px;color:var(--t2)">${i.mat}</td><td style="color:var(--acc);font-family:var(--mono)">${Math.round(i.cost).toLocaleString('ar-DZ')} دج</td></tr>`).join('')}</tbody>
+    </table>
+    <div style="border-top:1px solid var(--b2);padding-top:10px;font-size:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>المجموع</span><span style="color:var(--acc);font-family:var(--mono)">${Math.round(tot).toLocaleString('ar-DZ')} دج</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>هامش الربح (${pricing.marginPct}%)</span><span style="color:var(--warn);font-family:var(--mono)">${Math.round(margin).toLocaleString('ar-DZ')} دج</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px;border-bottom:1px solid var(--b2);padding-bottom:10px"><span>الضريبة (${pricing.taxPct}%)</span><span style="color:var(--warn);font-family:var(--mono)">${Math.round(tax).toLocaleString('ar-DZ')} دج</span></div>
+      <div style="display:flex;justify-content:space-between;font-weight:600;font-size:14px;color:var(--warn)"><span>الإجمالي</span><span style="font-family:var(--mono)">${Math.round(grandTotal).toLocaleString('ar-DZ')} دج</span></div>
+    </div>
+    <div style="margin-top:14px;padding:10px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t2)">
+      <div>📞 للاستفسار: +213 XXX XXX XXX</div>
+      <div style="margin-top:4px">📧 البريد: info@amiros.dz</div>
+    </div>`;
+  document.getElementById('quote-modal').classList.add('open');
+}
+function closeQuote(){document.getElementById('quote-modal').classList.remove('open');}
+function printQuote(){window.print();}
+
+// Init
+buildRoom();renderUnitsList();updatePrice();
+</script>
+</body>
+</html>
